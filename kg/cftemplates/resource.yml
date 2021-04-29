@@ -1,0 +1,137 @@
+Description: Front servers
+
+Parameters:
+
+  Project:
+    Description: Name 
+    Type: String
+  
+  Env:
+    Description: Env
+    Type: String
+
+  Comp:
+    Type: String
+
+  Subnet:
+    Type: String
+
+  VPC:
+    Type: String
+
+  Certificate:
+    Type: String
+
+  Max:
+    Type: String
+
+  Min:
+    Type: String
+
+  Desired:
+    Type: String
+
+  AMIFront:
+    Type: String
+
+  InstanceProfile:
+    Type: String
+
+Resources:
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: String
+      LoadBalancerAttributes:
+        - LoadBalancerAttribute
+      Name: !Sub ${comp}-${Env}-${Project}-alb
+      Scheme: internet-facing
+      Subnets: !Split [ ",", !Ref Subnet ]
+      Type: application
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 443
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: "200-399"
+      Name: !Sub ${comp}-${Env}-${Project}-tg
+      Port: 443
+      Protocol: HTTPS
+      Tags:
+        - Key: Name
+          Value: !Sub ${comp}-${Project}-${Env}
+      TargetGroupAttributes:
+        - TargetGroupAttribute
+      TargetType: Instance
+      UnhealthyThresholdCount: 5
+      VpcId: !Ref VPC
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions: #required
+        - TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: String
+      Certificates: !Ref Certificate
+
+  ASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${comp}-${Env}-${Project}-asg
+      DesiredCapacity: !Ref Desired
+      HealthCheckGracePeriod: 300
+      HealthCheckType: ELB
+      LaunchConfigurationName: String
+      MaxSize: !Ref Max
+      MinSize: !Ref Min
+      Tags:
+        - Key: Name
+          Value: !Sub ${comp}-${Project}-${Env}
+          PropagateAtLaunch: 'true'
+      TargetGroupARNs: !Ref TargetGroup
+      VPCZoneIdentifier: !Split [ ",", !Ref Subnet ]
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp2
+            DeleteOnTermination: true
+            Encrypted: true
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId: !Ref AMIFront
+      InstanceType: t2.micro #Can be parameterized
+      LaunchConfigurationName: !Sub ${comp}-${Project}-${Env}-launchconfig
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          
+          # Commands to install cloudwatch and start service
+
+  #Scaling policies if needed
+
+Outputs:
+  ASGName:
+    Value: !Ref ASG
+
+  TargetGroup:
+    Value: !Ref TargetGroup
+
+  LoadBalancer:
+    Value: !Ref LoadBalancer
+
+  LoadBalancerDNS:
+    Value: !GetAtt LoadBalancer.DNSName

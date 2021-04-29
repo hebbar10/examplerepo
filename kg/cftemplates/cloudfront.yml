@@ -1,0 +1,33 @@
+Description: CloudFront
+
+Parameters:
+
+  Project:
+    Description: Name 
+    Type: String
+  
+  Env:
+    Description: Env
+    Type: String
+
+  LoadBalancerDNS:
+    Type: String
+  
+  LoadBalancer:
+    Type: String
+
+
+Resources:
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig: 
+        Enabled: true
+        Aliases: example.com
+        ViewerCertificate:
+          AcmCertificateArn: <ACM Location>
+        Origins:
+          - DomainName: !Ref LoadBalancerDNS
+            Id: !Ref LoadBalancer
+      Tags:
+        - Tag

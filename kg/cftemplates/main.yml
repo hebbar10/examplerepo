@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 3 tier web application
+
+Parameters:
+
+  Project:
+    Description: Name of project 
+    Type: String
+
+  Env:
+    Description: Env name 
+    Type: String
+
+  ##VPC
+
+  CIDR:
+    Description: VPC CIDR
+    Type: String
+
+  PublicCIDR1:
+    Description: PublicCIDR1
+    Type: String
+
+  PublicCIDR2:
+    Description: PublicCIDR2
+    Type: String
+
+  PrivateCIDR1:
+    Description: PrivateCIDR1
+    Type: String
+
+  PrivateCIDR2:
+    Description: PrivateCIDR2
+    Type: String
+
+  ##EC2
+  Certificate:
+    Type: String
+
+  AMIFront:
+    Type: String
+
+  AMIBack:
+    Type: String
+
+  Max:
+    Type: String
+
+  Min:
+    Type: String
+
+  Desired:
+    Type: String
+
+  #DB
+  DBMasterPass:
+    Type: String
+    NoEcho: true
+
+  DBInstanceType:
+    Type: String
+
+  HostedZoneId:
+    Type: String
+
+Resources:
+
+  InstanceProfile:
+    Type: AWS::CloudFromation::Stack
+    Properties:
+      TemplateURL: instanceProfile.yml
+      Parameters:
+        Project: !Ref Project
+        Env: !Ref Env
+
+  AppVPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: appVPC.yml
+      Parameters:
+        Project: !Ref Project
+        Env: !Ref Env
+        CIDR: !Ref CIDR
+        PublicCIDR1: !Ref PublicCIDR1
+        PublicCIDR2: !Ref PublicCIDR2
+        PrivateCIDR1: !Ref PrivateCIDR1
+        PrivateCIDR2: !Ref PrivateCIDR1
+
+  Frontresource:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: resource.yml
+      Parameters:
+        Project: !Ref Project
+        Env: !Ref Env
+        Comp: Front
+        Subnet: !GetAtt AppVPC.Ouputs.PublicSub
+        InstanceProfile: !GetAtt InstanceProfile.Outputs.InstanceProfileName
+        VPC: !Ref AppVPC
+        Certificate: !Ref Certificate
+        AMI: !Ref AMIFront
+        Max: !Ref Max
+        Min: !Ref Min
+        Desired: !Ref Desired
+
+  
+  Backendresource:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: resource.yml
+      Parameters:
+        Project: !Ref Project
+        Env: !Ref Env
+        Comp: Backend
+        Subnet: !GetAtt AppVPC.Outputs.PrivateSub
+        InstanceProfile: !GetAtt InstanceProfile.Outputs.InstanceProfileName
+        VPC: !Ref AppVPC
+        Certificate: !Ref Certificate
+        AMI: !Ref AMIBack
+        Max: !Ref Max
+        Min: !Ref Min
+        Desired: !Ref Desired
+
+    DBresource:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: db.yml
+      Parameters:
+        Project: !Ref Project
+        Env: !Ref Env
+        Subnet: !GetAtt AppVPC.Outputs.PrivateSub
+        VPC: !Ref AppVPC
+        DBMasterpassword: !Ref DBMasterPass
+        DBInstanceType: !Ref DBInstanceType
+        HostedZoneId: !Ref HostedZoneId
+
+    CloudFront:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+      TemplateURL: cloudfront.yml
+      Parameters:
+        Project: !Ref Project
+        Env: !Ref Env
+        Port: 443
+        TargetGroup: !GetAtt Frontresource.Outputs.TargetGroup
+        LoadBalancerDNS: !GetAtt LoadBalancer.Outputs.LoadBalancerDNS
+        LoadBalancer: !GetAtt LoadBalancer.Outputs.LoadBalancer
+        
+

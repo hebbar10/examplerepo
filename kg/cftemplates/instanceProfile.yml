@@ -1,0 +1,43 @@
+Description: Instance Profile for ASG servers
+
+Parameters:
+
+  Project:
+    Description: Name 
+    Type: String
+  
+  Env:
+    Description: Env
+    Type: String
+
+Resources:
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+        - "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+      Path: '/'
+      RoleName: !Sub ${Project}-${Env}-managed-role
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub ${Project}-{Env}-instance-profile
+      Path: /
+      Roles: 
+        - !Ref InstanceRole
+
+Outputs:
+  InstanceProfileName:
+    Value: !Ref InstanceProfile

@@ -1,0 +1,108 @@
+Description: DB Servers
+
+Parameters:
+
+  Project:
+    Description: Name 
+    Type: String
+  
+  Env:
+    Description: Env
+    Type: String
+
+  Subnet:
+    Type: String
+
+  VPC:
+    Type: String
+
+  DBMasterPass:
+    Type: String
+    NoEcho: true
+
+  DBInstanceType:
+    Type: String
+
+  HostedZoneId:
+    Type: String
+
+Resources:
+
+  DBSecurityGroup:
+    Type: AWS::RDS::DBSecurityGroup
+    Properties:
+      DBSecurityGroupIngress: #required
+        - Ingress
+      EC2VpcId: String
+      GroupDescription: String #required
+      Tags:
+        - Tag
+
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: String
+      AllowMajorVersionUpgrade: Boolean
+      AssociatedRoles:
+        - DBInstanceRole
+      AutoMinorVersionUpgrade: Boolean
+      AvailabilityZone: String
+      BackupRetentionPeriod: Integer
+      CACertificateIdentifier: String
+      CharacterSetName: String
+      CopyTagsToSnapshot: Boolean
+      DBClusterIdentifier: String
+      DBInstanceClass: String #required
+      DBInstanceIdentifier: String
+      DBName: String
+      DBParameterGroupName: String
+      DBSecurityGroups:
+        - String
+      DBSnapshotIdentifier: String
+      DBSubnetGroupName: String
+      DeleteAutomatedBackups: Boolean
+      DeletionProtection: Boolean
+      Domain: String
+      DomainIAMRoleName: String
+      EnableCloudwatchLogsExports:
+        - String
+      EnableIAMDatabaseAuthentication: Boolean
+      EnablePerformanceInsights: Boolean
+      Engine: String
+      EngineVersion: String
+      Iops: Integer
+      KmsKeyId: String
+      LicenseModel: String
+      MasterUserPassword: String
+      MasterUsername: String
+      MaxAllocatedStorage: Integer
+      MonitoringInterval: Integer
+      MonitoringRoleArn: String
+      MultiAZ: Boolean
+      OptionGroupName: String
+      PerformanceInsightsKMSKeyId: String
+      PerformanceInsightsRetentionPeriod: Integer
+      Port: String
+      PreferredBackupWindow: String
+      PreferredMaintenanceWindow: String
+      ProcessorFeatures:
+        - ProcessorFeature
+      PromotionTier: Integer
+      PubliclyAccessible: Boolean
+      SourceDBInstanceIdentifier: String
+      SourceRegion: String
+      StorageEncrypted: Boolean
+      StorageType: String
+      Tags:
+        - Tag
+      Timezone: String
+      UseDefaultProcessorFeatures: Boolean
+      VPCSecurityGroups:
+        - String
+
+
+Outputs:
+
+  DBInstanceName:
+    Value: !GetAtt DBInstance.Endpoint.Address
